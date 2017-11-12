@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append("..")
-from model_mod1 import get_training_model
+from model_mod2_mobnet import get_training_model
 
 try:
     from .ds_iterator import DataIterator
@@ -26,6 +26,7 @@ except:
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, CSVLogger, TensorBoard
 from keras.layers.convolutional import Conv2D
 from keras.applications.vgg19 import VGG19
+import keras.applications.mobilenet as mobnet
 import keras.backend as K
 import tensorflow as tf
 
@@ -34,6 +35,7 @@ configGPU = tf.ConfigProto()
 configGPU.gpu_options.per_process_gpu_memory_fraction = 0.8
 keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
 
+paramMobnetMult = 0.5
 batch_size = 16
 base_lr = 4e-5 # 2e-5
 momentum = 0.9
@@ -63,18 +65,6 @@ def get_last_epoch():
 
 model = get_training_model(weight_decay, pstages=paramNumStages)
 model.summary()
-
-# from_vgg = dict()
-# from_vgg['conv1_1'] = 'block1_conv1'
-# from_vgg['conv1_2'] = 'block1_conv2'
-# from_vgg['conv2_1'] = 'block2_conv1'
-# from_vgg['conv2_2'] = 'block2_conv2'
-# from_vgg['conv3_1'] = 'block3_conv1'
-# from_vgg['conv3_2'] = 'block3_conv2'
-# from_vgg['conv3_3'] = 'block3_conv3'
-# from_vgg['conv3_4'] = 'block3_conv4'
-# from_vgg['conv4_1'] = 'block4_conv1'
-# from_vgg['conv4_2'] = 'block4_conv2'
 
 # load previous weights or vgg19 if this is the first run
 if os.path.exists(WEIGHTS_BEST):

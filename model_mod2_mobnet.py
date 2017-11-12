@@ -7,6 +7,8 @@ from keras.layers.merge import Multiply
 from keras.regularizers import l2
 from keras.initializers import random_normal,constant
 
+import keras.applications.mobilenet as mobnet
+
 def relu(x): return Activation('relu')(x)
 
 def conv(x, nf, ks, name, weight_decay):
@@ -31,33 +33,28 @@ def vgg_block(x, weight_decay):
     x = conv(x, 32, 3, "conv1_2", (weight_decay, 0))
     x = relu(x)
     x = pooling(x, 2, 2, "pool1_1")
-
     # Block 2
     x = conv(x, 64, 3, "conv2_1", (weight_decay, 0))
     x = relu(x)
     x = conv(x, 64, 3, "conv2_2", (weight_decay, 0))
     x = relu(x)
     x = pooling(x, 2, 2, "pool2_1")
-
     # Block 3
     x = conv(x, 128, 3, "conv3_1", (weight_decay, 0))
     x = relu(x)
     x = conv(x, 128, 3, "conv3_2", (weight_decay, 0))
     x = relu(x)
     x = pooling(x, 2, 2, "pool3_1")
-
     # Block 4
     x = conv(x, 256, 3, "conv4_1", (weight_decay, 0))
     x = relu(x)
     x = conv(x, 256, 3, "conv4_2", (weight_decay, 0))
     x = relu(x)
-
     # Additional non vgg layers
     x = conv(x, 256, 3, "conv4_3_CPM", (weight_decay, 0))
     x = relu(x)
     x = conv(x, 128, 3, "conv4_4_CPM", (weight_decay, 0))
     x = relu(x)
-
     return x
 
 
