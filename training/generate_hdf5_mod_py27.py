@@ -217,12 +217,12 @@ def writeHDF5():
         height_binary = float2bytes(data[idx]['img_height'])
         # print('height_binary = [{}]').format(height_binary)
         for i in range(len(height_binary)):
-            meta_data[clidx][i] = height_binary[i]
-            # meta_data[clidx][i] = ord(height_binary[i])
+            # meta_data[clidx][i] = height_binary[i]
+            meta_data[clidx][i] = ord(height_binary[i])
         width_binary = float2bytes(data[idx]['img_width'])
         for i in range(len(width_binary)):
-            meta_data[clidx][4 + i] = width_binary[i]
-            # meta_data[clidx][4 + i] = ord(width_binary[i])
+            # meta_data[clidx][4 + i] = width_binary[i]
+            meta_data[clidx][4 + i] = ord(width_binary[i])
         clidx = clidx + 1
         # (a) isValidation(uint8), numOtherPeople (uint8), people_index (uint8), annolist_index (float), writeCount(float), totalWriteCount(float)
         meta_data[clidx][0] = data[idx]['isValidation']
@@ -230,43 +230,43 @@ def writeHDF5():
         meta_data[clidx][2] = data[idx]['people_index']
         annolist_index_binary = float2bytes(data[idx]['annolist_index'])
         for i in range(len(annolist_index_binary)):  # 3,4,5,6
-            meta_data[clidx][3 + i] = annolist_index_binary[i]
-            # meta_data[clidx][3 + i] = ord(annolist_index_binary[i])
+            # meta_data[clidx][3 + i] = annolist_index_binary[i]
+            meta_data[clidx][3 + i] = ord(annolist_index_binary[i])
         if isValidation:
             count_binary = float2bytes(float(val_write_count))
         else:
             count_binary = float2bytes(float(tr_write_count))
         for i in range(len(count_binary)):
-            meta_data[clidx][7 + i] = count_binary[i]
-            # meta_data[clidx][7 + i] = ord(count_binary[i])
+            # meta_data[clidx][7 + i] = count_binary[i]
+            meta_data[clidx][7 + i] = ord(count_binary[i])
         if isValidation:
             totalWriteCount_binary = float2bytes(float(val_total_write_count))
         else:
             totalWriteCount_binary = float2bytes(float(tr_total_write_count))
         for i in range(len(totalWriteCount_binary)):
-            meta_data[clidx][11 + i] = totalWriteCount_binary[i]
-            # meta_data[clidx][11 + i] = ord(totalWriteCount_binary[i])
+            # meta_data[clidx][11 + i] = totalWriteCount_binary[i]
+            meta_data[clidx][11 + i] = ord(totalWriteCount_binary[i])
         nop = int(data[idx]['numOtherPeople'])
         clidx = clidx + 1
         # (b) objpos_x (float), objpos_y (float)
         objpos_binary = float2bytes(data[idx]['objpos'])
         for i in range(len(objpos_binary)):
-            meta_data[clidx][i] = objpos_binary[i]
-            # meta_data[clidx][i] = ord(objpos_binary[i])
+            # meta_data[clidx][i] = objpos_binary[i]
+            meta_data[clidx][i] = ord(objpos_binary[i])
         clidx = clidx + 1
         # (c) scale_provided (float)
         scale_provided_binary = float2bytes(data[idx]['scale_provided'])
         for i in range(len(scale_provided_binary)):
-            meta_data[clidx][i] = scale_provided_binary[i]
-            # meta_data[clidx][i] = ord(scale_provided_binary[i])
+            # meta_data[clidx][i] = scale_provided_binary[i]
+            meta_data[clidx][i] = ord(scale_provided_binary[i])
         clidx = clidx + 1
         # (d) joint_self (3*16) (float) (3 line)
         joints = np.asarray(data[idx]['joint_self']).T.tolist()  # transpose to 3*16
         for i in range(len(joints)):
             row_binary = float2bytes(joints[i])
             for j in range(len(row_binary)):
-                meta_data[clidx][j] = row_binary[j]
-                # meta_data[clidx][j] = ord(row_binary[j])
+                # meta_data[clidx][j] = row_binary[j]
+                meta_data[clidx][j] = ord(row_binary[j])
             clidx = clidx + 1
         # (e) check nop, prepare arrays
         if (nop != 0):
@@ -277,14 +277,14 @@ def writeHDF5():
             for i in range(nop):
                 objpos_binary = float2bytes(objpos_other[i])
                 for j in range(len(objpos_binary)):
-                    meta_data[clidx][j] = objpos_binary[j]
-                    # meta_data[clidx][j] = ord(objpos_binary[j])
+                    # meta_data[clidx][j] = objpos_binary[j]
+                    meta_data[clidx][j] = ord(objpos_binary[j])
                 clidx = clidx + 1
             # (g) scale_provided_other (nop floats in 1 line)
             scale_provided_other_binary = float2bytes(scale_provided_other)
             for j in range(len(scale_provided_other_binary)):
-                meta_data[clidx][j] = scale_provided_other_binary[j]
-                # meta_data[clidx][j] = ord(scale_provided_other_binary[j])
+                # meta_data[clidx][j] = scale_provided_other_binary[j]
+                meta_data[clidx][j] = ord(scale_provided_other_binary[j])
             clidx = clidx + 1
             # (h) joint_others (3*16) (float) (nop*3 lines)
             for n in range(nop):
@@ -292,8 +292,8 @@ def writeHDF5():
                 for i in range(len(joints)):
                     row_binary = float2bytes(joints[i])
                     for j in range(len(row_binary)):
-                        meta_data[clidx][j] = row_binary[j]
-                        # meta_data[clidx][j] = ord(row_binary[j])
+                        # meta_data[clidx][j] = row_binary[j]
+                        meta_data[clidx][j] = ord(row_binary[j])
                     clidx = clidx + 1
 
         # print meta_data[0:12,0:48]

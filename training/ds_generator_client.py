@@ -11,7 +11,7 @@ else:
 
 class DataGeneratorClient(object):
 
-    def __init__(self, host, port, hwm=20, batch_size=10):
+    def __init__(self, host, port, hwm=20, batch_size=10, pstages=6):
         """
         :param host:
         :param port:
@@ -32,6 +32,7 @@ class DataGeneratorClient(object):
         self.port = port
         self.hwm = hwm
         self.socket = None
+        self.stages = pstages
 
         self.split_point = 38
         self.vec_num = 38
@@ -114,13 +115,15 @@ class DataGeneratorClient(object):
                 batch_y1 = np.concatenate(batches_y1)
                 batch_y2 = np.concatenate(batches_y2)
 
-                yield [batch_x, batch_x1,  batch_x2], \
-                       [batch_y1, batch_y2,
-                        batch_y1, batch_y2,
-                        batch_y1, batch_y2,
-                        batch_y1, batch_y2,
-                        batch_y1, batch_y2,
-                        batch_y1, batch_y2]
+                yield  [batch_x, batch_x1,  batch_x2], [batch_y1, batch_y2] * self.stages
+
+                # yield [batch_x, batch_x1,  batch_x2], \
+                #        [batch_y1, batch_y2,
+                #         batch_y1, batch_y2,
+                #         batch_y1, batch_y2,
+                #         batch_y1, batch_y2,
+                #         batch_y1, batch_y2,
+                #         batch_y1, batch_y2]
 
     def start(self):
         context = zmq.Context()

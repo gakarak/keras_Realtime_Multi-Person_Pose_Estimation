@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+__author__ = 'ar'
+
 import argparse
 import cv2
 import math
@@ -6,10 +10,11 @@ import numpy as np
 import util
 from config_reader import config_reader
 from scipy.ndimage.filters import gaussian_filter
-from model import get_testing_model
+from model_mod1 import get_testing_model
 import matplotlib.pyplot as plt
 import keras
 import tensorflow as tf
+import glob
 
 
 # find connection in the specified sequence, center 29 is in the position 15
@@ -33,43 +38,47 @@ colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0]
 def process (input_image, params, model_params):
 
     oriImg = cv2.imread(input_image)  # B,G,R order
-    multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
+    # multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
+    multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in [1.0]]
 
     heatmap_avg = np.zeros((oriImg.shape[0], oriImg.shape[1], 19))
     paf_avg = np.zeros((oriImg.shape[0], oriImg.shape[1], 38))
 
+    T01 = time.time()
     for m in range(len(multiplier)):
         scale = multiplier[m]
 
         imageToTest = cv2.resize(oriImg, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
-        imageToTest_padded, pad = util.padRightDownCorner(imageToTest, model_params['stride'],
-                                                          model_params['padValue'])
-
+        imageToTest_padded, pad = util.padRightDownCorner(imageToTest, model_params['stride'], model_params['padValue'])
         input_img = np.transpose(np.float32(imageToTest_padded[:,:,:,np.newaxis]), (3,0,1,2)) # required shape (1, width, height, channels)
 
-
+        T1_1 = time.time()
         output_blobs = model.predict(input_img)
+        dT1_1 = time.time() - T1_1
+        print ('\tdT[ model.predict(input_img) ] = {:0.2f} (s), shape = {}'.format(dT1_1, input_img.shape))
 
+        T1_2 = time.time()
         # extract outputs, resize, and remove padding
         heatmap = np.squeeze(output_blobs[1])  # output 1 is heatmaps
-        heatmap = cv2.resize(heatmap, (0, 0), fx=model_params['stride'], fy=model_params['stride'],
-                             interpolation=cv2.INTER_CUBIC)
-        heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3],
-                  :]
+        heatmap = cv2.resize(heatmap, (0, 0), fx=model_params['stride'], fy=model_params['stride'], interpolation=cv2.INTER_CUBIC)
+        heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         heatmap = cv2.resize(heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
-
         paf = np.squeeze(output_blobs[0])  # output 0 is PAFs
-        paf = cv2.resize(paf, (0, 0), fx=model_params['stride'], fy=model_params['stride'],
-                         interpolation=cv2.INTER_CUBIC)
+        paf = cv2.resize(paf, (0, 0), fx=model_params['stride'], fy=model_params['stride'], interpolation=cv2.INTER_CUBIC)
         paf = paf[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         paf = cv2.resize(paf, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
-
         heatmap_avg = heatmap_avg + heatmap / len(multiplier)
         paf_avg = paf_avg + paf / len(multiplier)
+        dT1_2 = time.time() - T1_2
+        print ('\tdT[ predict-simple-post1 ] = {:0.2f} (s)'.format(dT1_2))
+
+    dT01 = time.time() - T01
+    print ('dT-Total[ for(model.predict) ] = {:0.2f} (s)'.format(dT01))
 
     all_peaks = []
     peak_counter = 0
 
+    T02 = time.time()
     for part in range(18):
         map_ori = heatmap_avg[:, :, part]
         map = gaussian_filter(map_ori, sigma=3)
@@ -92,11 +101,15 @@ def process (input_image, params, model_params):
 
         all_peaks.append(peaks_with_score_and_id)
         peak_counter += len(peaks)
+    dT02 = time.time() - T02
+    print ('dT-Total[ peaks ] = {:0.2f} (s)'.format(dT02))
+
 
     connection_all = []
     special_k = []
     mid_num = 10
 
+    T03 = time.time()
     for k in range(len(mapIdx)):
         score_mid = paf_avg[:, :, [x - 19 for x in mapIdx[k]]]
         candA = all_peaks[limbSeq[k][0] - 1]
@@ -110,9 +123,6 @@ def process (input_image, params, model_params):
                 for j in range(nB):
                     vec = np.subtract(candB[j][:2], candA[i][:2])
                     norm = math.sqrt(vec[0] * vec[0] + vec[1] * vec[1])
-                    # failure case when 2 body parts overlaps
-                    if norm == 0:
-                        continue
                     vec = np.divide(vec, norm)
 
                     startend = list(zip(np.linspace(candA[i][0], candB[j][0], num=mid_num), \
@@ -148,6 +158,8 @@ def process (input_image, params, model_params):
         else:
             special_k.append(k)
             connection_all.append([])
+    dT03 = time.time() - T03
+    print ('dT-Total[ connections ] = {:0.2f} (s)'.format(dT03))
 
     # last number in each row is the total parts number of that person
     # the second last number in each row is the score of the overall configuration
@@ -236,40 +248,46 @@ if __name__ == '__main__':
     keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
     #
 
+    paramNumStages = 4
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', type=str, required=True, help='input image')
-    parser.add_argument('--output', type=str, default='result.png', help='output image')
-    parser.add_argument('--model', type=str, default='model/keras/model.h5', help='path to the weights file')
+    parser.add_argument('--imdir', type=str, required=True, help='input image')
+    parser.add_argument('--modelDir', type=str,
+                        default='/home/ar/github.com/00_PoseEstimation/keras_Realtime_Multi-Person_Pose_Estimation.git/training',
+                        help='path to the model weights directory')
+
 
     args = parser.parse_args()
-    input_image = args.image
-    output = args.output
-    keras_weights_file = args.model
+    dir_input_image = args.imdir
+    keras_weights_file = '{}/weights_best_s{}.h5'.format(args.modelDir, paramNumStages)
 
-    tic = time.time()
-    print('start processing...')
+    lstImages = glob.glob('{}/*'.format(args.imdir))
+    numImages = len(lstImages)
 
-    # load model
+    for ii, input_image in enumerate(lstImages):
+        timg = cv2.imread(input_image)
+        if timg is None:
+            print ('\t!!! WARNING !!! Image is invalid, skip ... [{}]'.format(input_image))
+            continue
 
-    # authors of original model don't use
-    # vgg normalization (subtracting mean) on input images
-    model = get_testing_model()
-    model.load_weights(keras_weights_file)
+        tic = time.time()
+        print('start processing...')
 
-    # load config
-    params, model_params = config_reader()
+        # load model
+        model = get_testing_model(pstages=paramNumStages)
+        model.load_weights(keras_weights_file)
+        params, model_params = config_reader()
 
-    # generate image with body parts
-    canvas = process(input_image, params, model_params)
+        # generate image with body parts
+        canvas = process(input_image, params, model_params)
 
-    toc = time.time()
-    print ('processing time is %.3f (s)' % (toc - tic))
+        toc = time.time()
+        print ('processing time is %.3f (s)' % (toc - tic))
 
-    plt.subplot(1, 2, 1)
-    plt.imshow(plt.imread(input_image))
-    plt.subplot(1, 2, 2)
-    plt.imshow(canvas)
-    plt.show()
+        plt.subplot(1, 2, 1)
+        plt.imshow(plt.imread(input_image))
+        plt.subplot(1, 2, 2)
+        plt.imshow(canvas)
+        plt.show()
 
     # cv2.imwrite(output, canvas)
     #
