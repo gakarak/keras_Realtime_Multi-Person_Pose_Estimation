@@ -271,6 +271,7 @@ if __name__ == '__main__':
         model = get_testing_model(pinpShape=(512, 512, 3))
         model.summary()
         model.load_weights(keras_weights_file)
+        model.summary()
         params, model_params = config_reader()
 
         # generate image with body parts

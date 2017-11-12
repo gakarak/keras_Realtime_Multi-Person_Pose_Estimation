@@ -252,7 +252,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--imdir', type=str, required=True, help='input image')
     parser.add_argument('--modelDir', type=str,
-                        default='/home/ar/github.com/00_PoseEstimation/keras_Realtime_Multi-Person_Pose_Estimation.git/training',
+                        default='/home/ar/github.com/00_PoseEstimation/keras_Realtime_Multi-Person_Pose_Estimation_gakarak.git/training',
                         help='path to the model weights directory')
 
 
@@ -275,6 +275,7 @@ if __name__ == '__main__':
         # load model
         model = get_testing_model(pstages=paramNumStages)
         model.load_weights(keras_weights_file)
+        model.summary()
         params, model_params = config_reader()
 
         # generate image with body parts
