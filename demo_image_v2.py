@@ -6,7 +6,10 @@ import numpy as np
 import util
 from config_reader import config_reader
 from scipy.ndimage.filters import gaussian_filter
-from model import get_testing_model
+try:
+    from .model import get_testing_model
+except:
+    from model import get_testing_model
 import matplotlib.pyplot as plt
 import keras
 import tensorflow as tf
@@ -265,7 +268,8 @@ if __name__ == '__main__':
         print('start processing...')
 
         # load model
-        model = get_testing_model()
+        model = get_testing_model(pinpShape=(512, 512, 3))
+        model.summary()
         model.load_weights(keras_weights_file)
         params, model_params = config_reader()
 

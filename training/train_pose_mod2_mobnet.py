@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 sys.path.append("..")
-from model_mod2_mobnet import get_training_model
+from model_mod2_mobnet import get_training_model, get_testing_model
 
 try:
     from .ds_iterator import DataIterator
@@ -32,10 +32,9 @@ import tensorflow as tf
 
 import keras
 configGPU = tf.ConfigProto()
-configGPU.gpu_options.per_process_gpu_memory_fraction = 0.8
+configGPU.gpu_options.per_process_gpu_memory_fraction = 0.7
 keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
 
-paramMobnetMult = 0.5
 batch_size = 16
 base_lr = 4e-5 # 2e-5
 momentum = 0.9
@@ -48,11 +47,12 @@ max_iter = 200000 # 600000
 # True = start data generator client, False = use augmented dataset file (deprecated)
 use_client_gen = True
 
+paramAlpha = 0.5
 # paramNumStages = 6
 paramNumStages = 4
-WEIGHTS_BEST = "weights_best_s{}.h5".format(paramNumStages)
-TRAINING_LOG = "training_s{}.csv".format(paramNumStages)
-LOGS_DIR = "./logs"
+WEIGHTS_BEST = "weights_mobilenet_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
+TRAINING_LOG = "log_trai_mobilenet_a{}_s{}.csv".format(paramAlpha, paramNumStages)
+LOGS_DIR = "./logs/log_mobilenet_a{}_s{}".format(paramAlpha, paramNumStages)
 
 # euclidean loss as implemented in caffe https://github.com/BVLC/caffe/blob/master/src/caffe/layers/euclidean_loss_layer.cpp
 def eucl_loss(x, y):
@@ -63,7 +63,9 @@ def get_last_epoch():
     return max(data['epoch'].values)
 
 
-model = get_training_model(weight_decay, pstages=paramNumStages)
+model = get_training_model(weight_decay, pstages=paramNumStages, palpha=paramAlpha)
+# model = get_testing_model(pstages=paramNumStages, pinpShape=(512, 512, 3), palpha=paramAlpha)
+# model = get_testing_model(pstages=paramNumStages, palpha=paramAlpha)
 model.summary()
 
 # load previous weights or vgg19 if this is the first run
@@ -73,7 +75,22 @@ if os.path.exists(WEIGHTS_BEST):
     model.load_weights(WEIGHTS_BEST)
     last_epoch = get_last_epoch() + 1
 else:
-    print("No pretrained model found, training from scratch ...")
+    if paramAlpha == 1.0:
+        alpha_text = '1_0'
+    elif paramAlpha == 0.75:
+        alpha_text = '7_5'
+    elif paramAlpha == 0.50:
+        alpha_text = '5_0'
+    else:
+        alpha_text = '2_5'
+    model_name = 'mobilenet_%s_%d_tf_no_top.h5' % (alpha_text, 224)
+    weigh_url = mobnet.BASE_WEIGHT_PATH + model_name
+    weights_path = keras.utils.data_utils.get_file(model_name,
+                                                   weigh_url,
+                                                   cache_subdir='models')
+    print("No pretrained model found, loading ImageNet-pretrained model weights from [{}]".format(weigh_url))
+    model.load_weights(weights_path, by_name=True)
+
     # print("Loading vgg19 weights...")
     # vgg_model = VGG19(include_top=False, weights='imagenet')
     # for layer in model.layers:
