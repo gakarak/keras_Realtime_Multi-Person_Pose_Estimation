@@ -244,7 +244,7 @@ def process (input_image, params, model_params):
 
 if __name__ == '__main__':
     configGPU = tf.ConfigProto()
-    configGPU.gpu_options.per_process_gpu_memory_fraction = 0.4
+    configGPU.gpu_options.per_process_gpu_memory_fraction = 0.12
     keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
     #
 
@@ -260,6 +260,13 @@ if __name__ == '__main__':
     dir_input_image = args.imdir
     keras_weights_file = '{}/weights_best_s{}.h5'.format(args.modelDir, paramNumStages)
 
+    # load model
+    model = get_testing_model(pstages=paramNumStages)
+    model.summary()
+    model.load_weights(keras_weights_file)
+    print('[*] Load trained model from [{}]'.format(keras_weights_file))
+    params, model_params = config_reader()
+
     lstImages = glob.glob('{}/*'.format(args.imdir))
     numImages = len(lstImages)
 
@@ -271,12 +278,6 @@ if __name__ == '__main__':
 
         tic = time.time()
         print('start processing...')
-
-        # load model
-        model = get_testing_model(pstages=paramNumStages)
-        model.load_weights(keras_weights_file)
-        model.summary()
-        params, model_params = config_reader()
 
         # generate image with body parts
         canvas = process(input_image, params, model_params)

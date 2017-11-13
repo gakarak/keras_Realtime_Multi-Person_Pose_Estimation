@@ -244,7 +244,7 @@ def process (input_image, params, model_params):
 
 if __name__ == '__main__':
     configGPU = tf.ConfigProto()
-    configGPU.gpu_options.per_process_gpu_memory_fraction = 0.9
+    configGPU.gpu_options.per_process_gpu_memory_fraction = 0.12
     keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
     #
     paramAlpha = 0.5
@@ -261,6 +261,12 @@ if __name__ == '__main__':
     fmodelBest = "weights_mobilenet_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
     keras_weights_file = '{}/{}'.format(args.modelDir, fmodelBest)
 
+    # load model
+    print('[*] Load trained model from [{}]'.format(keras_weights_file))
+    model = get_testing_model(pstages=paramNumStages, palpha=paramAlpha)
+    model.load_weights(keras_weights_file)
+    params, model_params = config_reader()
+
     lstImages = glob.glob('{}/*'.format(args.imdir))
     numImages = len(lstImages)
 
@@ -272,11 +278,6 @@ if __name__ == '__main__':
 
         tic = time.time()
         print('start processing...')
-
-        # load model
-        model = get_testing_model(pstages=paramNumStages, palpha=paramAlpha)
-        # model.load_weights(keras_weights_file)
-        params, model_params = config_reader()
 
         # generate image with body parts
         canvas = process(input_image, params, model_params)

@@ -84,11 +84,11 @@ else:
     else:
         alpha_text = '2_5'
     model_name = 'mobilenet_%s_%d_tf_no_top.h5' % (alpha_text, 224)
-    weigh_url = mobnet.BASE_WEIGHT_PATH + model_name
+    weights_url = mobnet.BASE_WEIGHT_PATH + model_name
     weights_path = keras.utils.data_utils.get_file(model_name,
-                                                   weigh_url,
+                                                   weights_url,
                                                    cache_subdir='models')
-    print("No pretrained model found, loading ImageNet-pretrained model weights from [{}]".format(weigh_url))
+    print("No pretrained model found, loading ImageNet-pretrained model weights from [{}]".format(weights_path))
     model.load_weights(weights_path, by_name=True)
 
     # print("Loading vgg19 weights...")
@@ -103,14 +103,14 @@ else:
 # prepare generators
 
 if use_client_gen:
-    train_client = DataGeneratorClient(port=5555, host="localhost", hwm=160,
+    train_client = DataGeneratorClient(port=5557, host="localhost", hwm=160,
                                        batch_size=batch_size,
                                        pstages=paramNumStages)
     train_client.start()
     train_di = train_client.gen()
     train_samples = 52597
 
-    val_client = DataGeneratorClient(port=5556, host="localhost", hwm=160,
+    val_client = DataGeneratorClient(port=5558, host="localhost", hwm=160,
                                      batch_size=batch_size,
                                      pstages=paramNumStages)
     val_client.start()
@@ -130,30 +130,29 @@ else:
 
 # setup lr multipliers for conv layers
 lr_mult=dict()
-for layer in model.layers:
-
-    if isinstance(layer, Conv2D):
-
-        # stage = 1
-        if re.match("Mconv\d_stage1.*", layer.name):
-            kernel_name = layer.weights[0].name
-            bias_name = layer.weights[1].name
-            lr_mult[kernel_name] = 1
-            lr_mult[bias_name] = 2
-
-        # stage > 1
-        elif re.match("Mconv\d_stage.*", layer.name):
-            kernel_name = layer.weights[0].name
-            bias_name = layer.weights[1].name
-            lr_mult[kernel_name] = 4
-            lr_mult[bias_name] = 8
-
-        # vgg
-        else:
-           kernel_name = layer.weights[0].name
-           bias_name = layer.weights[1].name
-           lr_mult[kernel_name] = 1
-           lr_mult[bias_name] = 2
+# for layer in model.layers:
+#     if isinstance(layer, Conv2D) or isinstance(layer, mobnet.DepthwiseConv2D):
+#         # stage = 1
+#         if re.match(".*Mconv\d_stage1.*", layer.name):
+#             kernel_name = layer.weights[0].name
+#             lr_mult[kernel_name] = 1
+#             if len(layer.weights) > 1:
+#                 bias_name = layer.weights[1].name
+#                 lr_mult[bias_name] = 2
+#         # stage > 1
+#         elif re.match(".*Mconv\d_stage.*", layer.name):
+#             kernel_name = layer.weights[0].name
+#             lr_mult[kernel_name] = 4
+#             if len(layer.weights) > 1:
+#                 bias_name = layer.weights[1].name
+#                 lr_mult[bias_name] = 8
+#         # vgg
+#         else:
+#            kernel_name = layer.weights[0].name
+#            lr_mult[kernel_name] = 1
+#            if len(layer.weights)>1:
+#                bias_name = layer.weights[1].name
+#                lr_mult[bias_name] = 2
 
 # configure loss functions
 # losses = {}
