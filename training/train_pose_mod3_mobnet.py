@@ -35,13 +35,22 @@ import tensorflow as tf
 import keras
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--batch',   required=False, help='batch size', default=16)
-parser.add_argument('--gpumem',  required=False, help='gpu memory usage fraction', default=None)
-parser.add_argument('--palpha',  required=False, help='model parameter: alpha', default=1.0)
-parser.add_argument('--pstages', required=False, help='model parameter: stages', default=6)
+parser.add_argument('--batch',   required=False, help='batch size', default=16, type=int)
+parser.add_argument('--gpumem',  required=False, help='gpu memory usage fraction', default=None, type=float)
+parser.add_argument('--palpha',  required=False, help='model parameter: alpha', default=1.0, type=float)
+parser.add_argument('--pstages', required=False, help='model parameter: stages', default=6, type=int)
 parser.add_argument('--weights', required=False, help='model file for weiths initialization', default=None)
-parser.add_argument('--port',    required=False, help='img-augmentation service port', default=5557)
+parser.add_argument('--port',    required=False, help='img-augmentation service port', default=5557, type=int)
 pargs = parser.parse_args()
+
+paramAlpha = pargs.palpha
+# paramNumStages = 6
+paramNumStages = pargs.pstages
+
+
+WEIGHTS_BEST = "weights_mobilenet_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
+TRAINING_LOG = "log_trai_mobilenet_a{}_s{}.csv".format(paramAlpha, paramNumStages)
+LOGS_DIR = "./logs/log_mobilenet_a{}_s{}".format(paramAlpha, paramNumStages)
 
 print("""
 [*] parameters
@@ -52,8 +61,13 @@ print("""
     net-stages:  {},
     net-weights: {},
     PORT(augm):  {}
-""".format(pargs.batch, pargs.gpumem, pargs.palpha, pargs.pstages, pargs.weights, pargs.port))
-
+    -
+    log-dir:     {},
+    log-csv:     {},
+    best_model:  {}
+""".format(pargs.batch, pargs.gpumem, pargs.palpha,
+           pargs.pstages, pargs.weights, pargs.port,
+           WEIGHTS_BEST, TRAINING_LOG, LOGS_DIR))
 
 ###############################
 if pargs.gpumem is not None:
@@ -72,13 +86,6 @@ max_iter = 200000 # 600000
 
 # True = start data generator client, False = use augmented dataset file (deprecated)
 use_client_gen = True
-
-paramAlpha = 0.5
-# paramNumStages = 6
-paramNumStages = pargs.pstages
-WEIGHTS_BEST = "weights_mobilenet_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
-TRAINING_LOG = "log_trai_mobilenet_a{}_s{}.csv".format(paramAlpha, paramNumStages)
-LOGS_DIR = "./logs/log_mobilenet_a{}_s{}".format(paramAlpha, paramNumStages)
 
 # euclidean loss as implemented in caffe https://github.com/BVLC/caffe/blob/master/src/caffe/layers/euclidean_loss_layer.cpp
 def eucl_loss(x, y):
