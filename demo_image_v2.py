@@ -58,11 +58,50 @@ def process (input_image, params, model_params):
 
         T1_2 = time.time()
         # extract outputs, resize, and remove padding
-        heatmap = np.squeeze(output_blobs[1])  # output 1 is heatmaps
+        foutMAP_HPP = 'def_heatmap_cl.hpp'
+        foutHMP_NPY = 'def_heatmap.npy'
+        foutPAF_NPY = 'def_paf.npy'
+        #
+        heatmap = np.squeeze(output_blobs[1])
+        paf = np.squeeze(output_blobs[0])  # output 0 is PAFs
+        strData_HMP_CL = ", ".join(["{}".format(xx) for xx in heatmap.reshape(-1)])
+        strData_HMP_CF = ", ".join(["{}".format(xx) for xx in heatmap.transpose((2, 0, 1)).reshape(-1)])
+        strData_PAF_CL = ", ".join(["{}".format(xx) for xx in paf.reshape(-1)])
+        strData_PAF_CF = ", ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
+
+        defData = """
+#ifdef  __MY_DATA__
+#define __MY_DATA__
+
+struct InpData {
+	int rows;
+	int cols;
+	int channels;
+	std::vector<double> heat; 
+};
+
+InpData dataHMP_CF{ %d, %d, %d, {%s}};
+InpData dataHMP_CL{ %d, %d, %d, {%s}};
+InpData dataPAF_CF{ %d, %d, %d, {%s}};
+InpData dataPAF_CL{ %d, %d, %d, {%s}};
+
+#endif
+
+        """ % (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF,
+               heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CL,
+               paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF,
+               paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CL)
+
+        with open(foutMAP_HPP, 'w') as f:
+            f.write(defData)
+        np.save(foutHMP_NPY, heatmap)
+        np.save(foutPAF_NPY, paf)
+
+        # output 1 is heatmaps
         heatmap = cv2.resize(heatmap, (0, 0), fx=model_params['stride'], fy=model_params['stride'], interpolation=cv2.INTER_CUBIC)
         heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         heatmap = cv2.resize(heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
-        paf = np.squeeze(output_blobs[0])  # output 0 is PAFs
+
         paf = cv2.resize(paf, (0, 0), fx=model_params['stride'], fy=model_params['stride'], interpolation=cv2.INTER_CUBIC)
         paf = paf[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         paf = cv2.resize(paf, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
@@ -248,8 +287,8 @@ if __name__ == '__main__':
     #
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--imdir', type=str, required=True, help='input image')
-    parser.add_argument('--model', type=str, default='model/keras/model.h5', help='path to the weights file')
+    parser.add_argument('--imdir', type=str, required=True, help='input image', default='.sample_images/00')
+    parser.add_argument('--model', type=str, default='training/weights.best_31epochs.h5', help='path to the weights file')
 
     args = parser.parse_args()
     dir_input_image = args.imdir
@@ -268,7 +307,7 @@ if __name__ == '__main__':
         print('start processing...')
 
         # load model
-        model = get_testing_model(pinpShape=(512, 512, 3))
+        model = get_testing_model(pinpShape=(368, 368, 3))
         model.summary()
         model.load_weights(keras_weights_file)
         model.summary()
