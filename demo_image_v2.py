@@ -85,15 +85,11 @@ SimpleData PAF_CL{ %d, %d, %d, {%s}};
         defData_hpp = """
 #ifndef DEF_HMP_DATA
 #define DEF_HMP_DATA
-#include <vector>
-#include <fstream>
-#include <iterator>
-#include <array>
 
 struct SimpleData{
-	size_t rows;
-	size_t cols;
-	size_t channels;
+	unsigned int rows;
+	unsigned int cols;
+	unsigned int channels;
 	double data[];
 };
 
