@@ -70,27 +70,28 @@ def process (input_image, params, model_params):
         strData_PAF_CL = ", ".join(["{}".format(xx) for xx in paf.reshape(-1)])
         strData_PAF_CF = ", ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
 
-        defData_cpp = """
-#include "%s"
+        defData_cpp = """#include "%s"
 
 SimpleData HMP_CF{ %d, %d, %d, {%s}};
 SimpleData HMP_CL{ %d, %d, %d, {%s}};
 SimpleData PAF_CF{ %d, %d, %d, {%s}};
 SimpleData PAF_CL{ %d, %d, %d, {%s}};
-#endif"""   % (foutMAP_HPP,
+
+"""   % (foutMAP_HPP,
                heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF,
                heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CL,
                paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF,
                paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CL)
-        defData_hpp = """
-#ifndef DEF_HMP_DATA
+        defData_hpp = """#ifndef DEF_HMP_DATA
 #define DEF_HMP_DATA
+
+#include <vector>
 
 struct SimpleData{
 	unsigned int rows;
 	unsigned int cols;
 	unsigned int channels;
-	double data[];
+	std::vector<double> data;
 };
 
 extern SimpleData HMP_CF;
@@ -292,19 +293,19 @@ extern SimpleData PAF_CL;
 
 if __name__ == '__main__':
     configGPU = tf.ConfigProto()
-    configGPU.gpu_options.per_process_gpu_memory_fraction = 0.4
+    # configGPU.gpu_options.per_process_gpu_memory_fraction = 0.2
     keras.backend.tensorflow_backend.set_session(tf.Session(config=configGPU))
     #
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--imdir', type=str, required=True, help='input image', default='.sample_images/00')
+    parser.add_argument('--imdir', type=str, required=True, help='input image', default='./sample_images/00')
     parser.add_argument('--model', type=str, default='training/weights.best_31epochs.h5', help='path to the weights file')
 
     args = parser.parse_args()
     dir_input_image = args.imdir
     keras_weights_file = args.model
 
-    lstImages = glob.glob('{}/*'.format(args.imdir))
+    lstImages = glob.glob('{}/*[0-9].jpg'.format(args.imdir))
     numImages = len(lstImages)
 
     for ii, input_image in enumerate(lstImages):

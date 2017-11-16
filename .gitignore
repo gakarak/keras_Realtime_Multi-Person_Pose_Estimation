@@ -15,3 +15,7 @@ __pycache__
 logs/
 training.csv
 weights.best.h5
+/def_heatmap.npy
+/def_hmp_data.cpp
+/def_paf.npy
+/def_hmp_data.hpp
