@@ -58,7 +58,8 @@ def process (input_image, params, model_params):
 
         T1_2 = time.time()
         # extract outputs, resize, and remove padding
-        foutMAP_HPP = 'def_heatmap_cl.hpp'
+        foutMAP_HPP = 'def_hmp_data.hpp'
+        foutMAP_CPP = 'def_hmp_data.cpp'
         foutHMP_NPY = 'def_heatmap.npy'
         foutPAF_NPY = 'def_paf.npy'
         #
@@ -69,31 +70,40 @@ def process (input_image, params, model_params):
         strData_PAF_CL = ", ".join(["{}".format(xx) for xx in paf.reshape(-1)])
         strData_PAF_CF = ", ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
 
-        defData = """
-#ifdef  __MY_DATA__
-#define __MY_DATA__
+        defData_cpp = """
+#include "%s"
 
-struct InpData {
-	int rows;
-	int cols;
-	int channels;
-	std::vector<double> heat; 
-};
-
-InpData dataHMP_CF{ %d, %d, %d, {%s}};
-InpData dataHMP_CL{ %d, %d, %d, {%s}};
-InpData dataPAF_CF{ %d, %d, %d, {%s}};
-InpData dataPAF_CL{ %d, %d, %d, {%s}};
-
-#endif
-
-        """ % (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF,
+SimpleData HMP_CF{ %d, %d, %d, {%s}};
+SimpleData HMP_CL{ %d, %d, %d, {%s}};
+SimpleData PAF_CF{ %d, %d, %d, {%s}};
+SimpleData PAF_CL{ %d, %d, %d, {%s}};
+#endif"""   % (foutMAP_HPP,
+               heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF,
                heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CL,
                paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF,
                paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CL)
+        defData_hpp = """
+#ifndef DEF_HMP_DATA
+#define DEF_HMP_DATA
+
+struct SimpleData{
+	unsigned int rows;
+	unsigned int cols;
+	unsigned int channels;
+	double data[];
+};
+
+extern SimpleData HMP_CF;
+extern SimpleData HMP_CL;
+extern SimpleData PAF_CF;
+extern SimpleData PAF_CL;
+
+#endif // DEF_HMP_DATA"""
 
         with open(foutMAP_HPP, 'w') as f:
-            f.write(defData)
+            f.write(defData_hpp)
+        with open(foutMAP_CPP, 'w') as f:
+            f.write(defData_cpp)
         np.save(foutHMP_NPY, heatmap)
         np.save(foutPAF_NPY, paf)
 
