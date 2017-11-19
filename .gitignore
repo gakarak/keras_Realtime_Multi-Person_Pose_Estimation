@@ -19,3 +19,4 @@ weights.best.h5
 /def_hmp_data.cpp
 /def_paf.npy
 /def_hmp_data.hpp
+/dataset_mpi/

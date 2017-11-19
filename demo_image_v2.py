@@ -4,6 +4,7 @@ import math
 import time
 import numpy as np
 import util
+import scipy
 from config_reader import config_reader
 from scipy.ndimage.filters import gaussian_filter
 try:
@@ -58,26 +59,50 @@ def process (input_image, params, model_params):
 
         T1_2 = time.time()
         # extract outputs, resize, and remove padding
-        foutMAP_HPP = 'def_hmp_data.hpp'
-        foutMAP_CPP = 'def_hmp_data.cpp'
-        foutHMP_NPY = 'def_heatmap.npy'
-        foutPAF_NPY = 'def_paf.npy'
+        foutMAP_HPP = 'def_hmp_data_x368.hpp'
+        foutMAP_CPP = 'def_hmp_data_x368.cpp'
+        foutHMP_NPY = 'def_heatmap_x368.npy'
+        foutPAF_NPY = 'def_paf_x368.npy'
         #
         heatmap = np.squeeze(output_blobs[1])
         paf = np.squeeze(output_blobs[0])  # output 0 is PAFs
-        strData_HMP_CL = ", ".join(["{}".format(xx) for xx in heatmap.reshape(-1)])
-        strData_HMP_CF = ", ".join(["{}".format(xx) for xx in heatmap.transpose((2, 0, 1)).reshape(-1)])
-        strData_PAF_CL = ", ".join(["{}".format(xx) for xx in paf.reshape(-1)])
-        strData_PAF_CF = ", ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
+        #
+        heatmap = scipy.ndimage.zoom(heatmap, (368/heatmap.shape[0], 368/heatmap.shape[1], 1))
+        paf = scipy.ndimage.zoom(paf, (368/paf.shape[0], 368/paf.shape[1], 1))
+        #
+        #
+        # strData_HMP_CL = ", ".join(["{}".format(xx) for xx in heatmap.reshape(-1)])
+        # strData_HMP_CF = ", ".join(["{}".format(xx) for xx in heatmap.transpose((2, 0, 1)).reshape(-1)])
+        # strData_PAF_CL = ", ".join(["{}".format(xx) for xx in paf.reshape(-1)])
+        # strData_PAF_CF = ", ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
+        #
+        strData_HMP_CF2 = " ".join(["{}".format(xx) for xx in heatmap.transpose((2, 0, 1)).reshape(-1)])
+        strData_PAF_CF2 = " ".join(["{}".format(xx) for xx in paf.transpose((2, 0, 1)).reshape(-1)])
 
-        defData_cpp = """#include "%s"
+        foutHMP_DAT = 'data_heatmap_x368.dat'
+        foutHMP_TXT = 'data_heatmap_x368.txt'
+        foutPAF_DAT = 'data_paf_x368.dat'
+        foutPAF_TXT = 'data_paf_x368.txt'
+        with open(foutHMP_DAT, 'wb') as f:
+            heatmap.tofile(f)
+            # f.write('{} {} {} {}'.format(heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF2))
+        with open(foutHMP_TXT, 'w') as f:
+            f.write('{} {} {} {}'.format(heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF2))
+        #
+        with open(foutPAF_DAT, 'wb') as f:
+            paf.tofile(f)
+            # f.write('{} {} {} {}'.format(paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF2))
+        with open(foutPAF_TXT, 'w') as f:
+            f.write('{} {} {} {}'.format(paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF2))
+        print('-')
+        defData_cpp = """#include "simple_data.hpp"
 
-SimpleData HMP_CF{ %d, %d, %d, {%s}};
-SimpleData HMP_CL{ %d, %d, %d, {%s}};
+SimpleData HEATMAP_CF{ %d, %d, %d, {%s}};
+SimpleData HEATMAP_CL{ %d, %d, %d, {%s}};
 SimpleData PAF_CF{ %d, %d, %d, {%s}};
 SimpleData PAF_CL{ %d, %d, %d, {%s}};
 
-"""   % (foutMAP_HPP,
+"""   % (#foutMAP_HPP,
                heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CF,
                heatmap.shape[0], heatmap.shape[1], heatmap.shape[2], strData_HMP_CL,
                paf.shape[0], paf.shape[1], paf.shape[2], strData_PAF_CF,
@@ -185,8 +210,7 @@ extern SimpleData PAF_CL;
                          for I in range(len(startend))])
 
                     score_midpts = np.multiply(vec_x, vec[0]) + np.multiply(vec_y, vec[1])
-                    score_with_dist_prior = sum(score_midpts) / len(score_midpts) + min(
-                        0.5 * oriImg.shape[0] / norm - 1, 0)
+                    score_with_dist_prior = sum(score_midpts) / len(score_midpts) + min(0.5 * oriImg.shape[0] / norm - 1, 0)
                     criterion1 = len(np.nonzero(score_midpts > params['thre2'])[0]) > 0.8 * len(
                         score_midpts)
                     criterion2 = score_with_dist_prior > 0

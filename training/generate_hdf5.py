@@ -27,8 +27,8 @@ datasets = [
 # ]
 
 joint_all = []
-tr_hdf5_path = os.path.join(dataset_dir, "train_dataset.h5")
-val_hdf5_path = os.path.join(dataset_dir, "val_dataset.h5")
+tr_hdf5_path = os.path.join(dataset_dir, "train_dataset_qqq.h5")
+val_hdf5_path = os.path.join(dataset_dir, "val_dataset_qqq.h5")
 
 val_size = 2645 # size of validation set
 #val_size = 300
