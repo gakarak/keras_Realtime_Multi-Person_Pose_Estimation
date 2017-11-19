@@ -48,9 +48,9 @@ paramAlpha = pargs.palpha
 paramNumStages = pargs.pstages
 
 
-WEIGHTS_BEST = "weights_mobilenet3_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
-TRAINING_LOG = "log_trai_mobilenet3_a{}_s{}.csv".format(paramAlpha, paramNumStages)
-LOGS_DIR = "./logs/log_mobilenet3_a{}_s{}".format(paramAlpha, paramNumStages)
+WEIGHTS_BEST = "weights_mobilenet4_best_a{}_s{}.h5".format(paramAlpha, paramNumStages)
+TRAINING_LOG = "log_trai_mobilenet4_a{}_s{}.csv".format(paramAlpha, paramNumStages)
+LOGS_DIR = "./logs/log_mobilenet4_a{}_s{}".format(paramAlpha, paramNumStages)
 
 print("""
 [*] parameters
