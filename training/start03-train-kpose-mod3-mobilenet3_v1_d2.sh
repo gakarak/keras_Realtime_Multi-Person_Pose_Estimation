@@ -7,7 +7,7 @@ palpha='0.5'
 pstages='3'
 pport='5557'
 
-export CUDA_VISIBLE_DEVICES="1"
+export CUDA_VISIBLE_DEVICES="0"
 
 runpy="train_pose_mod3_mobnet3_v2.py"
 ##train_pose_mod3_mobnet.py"

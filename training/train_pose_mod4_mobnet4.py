@@ -7,6 +7,7 @@ import os
 import pandas
 import re
 import math
+import keras.optimizers as kopt
 
 import argparse
 
@@ -223,7 +224,9 @@ tb = TensorBoard(log_dir=LOGS_DIR, histogram_freq=0, write_graph=True, write_ima
 callbacks_list = [lrate, checkpoint, csv_logger, tb]
 
 # sgd optimizer with lr multipliers
-multisgd = MultiSGD(lr=base_lr, momentum=momentum, decay=0.0, nesterov=False, lr_mult=lr_mult)
+# multisgd = MultiSGD(lr=base_lr, momentum=momentum, decay=0.0, nesterov=False, lr_mult=lr_mult)
+
+multisgd = kopt.Adam(lr=0.0002)
 
 # start training
 model.compile(loss=losses, optimizer=multisgd, metrics=["accuracy"])

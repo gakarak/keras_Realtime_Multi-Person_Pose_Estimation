@@ -2,10 +2,10 @@
 
 
 pgpu='0.8'
-pbatch='32'
-palpha='0.5'
-pstages='3'
-pport='5557'
+pbatch='24'
+palpha='0.75'
+pstages='2'
+pport='6557'
 
 export CUDA_VISIBLE_DEVICES="1"
 

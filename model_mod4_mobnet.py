@@ -238,7 +238,7 @@ def get_training_model(weight_decay, pinpShape = None, palpha=1.0, pstages = 6):
     return model
 
 
-def get_testing_model(pinpShape = None, palpha=1.0, pstages=6):
+def get_testing_model(pinpShape = None, palpha=1.0, pstages=6, isNormalizeData=False):
     stages = pstages
     np_branch1 = 38
     np_branch2 = 19
@@ -250,9 +250,10 @@ def get_testing_model(pinpShape = None, palpha=1.0, pstages=6):
 
     img_input = Input(shape=img_input_shape)
 
-    img_normalized = img_input
-
-    # img_normalized = Lambda(lambda x: x / 256 - 0.5)(img_input) # [-0.5, 0.5]
+    if isNormalizeData:
+        img_normalized = Lambda(lambda x: x / 256 - 0.5)(img_input) # [-0.5, 0.5]
+    else:
+        img_normalized = img_input
 
     # VGG
     # stage0_out = vgg_block(img_normalized, None)
